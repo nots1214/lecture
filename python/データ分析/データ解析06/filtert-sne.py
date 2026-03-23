@@ -1,0 +1,43 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+df = pd.read_excel('feature selection_data.xlsx')
+X=df[[f"feature{i}" for i in range(1, 21)]]
+y=df[["label"]]
+cor = pd.concat([X, y], axis=1).corr()
+target_cor = abs(cor["label"])
+print(target_cor)
+c = 0.3
+X_selected = target_cor[target_cor>c]
+X_selected = X_selected.drop("label").index
+print(X_selected)
+cor2 = X[X_selected].corr().abs()
+print(cor2)
+threshold = 0.9
+while True:
+    max = 0
+    for i in range(len(X_selected)):
+        for j in range(i+1,len(X_selected)):
+            f1 = X_selected[i]
+            f2 = X_selected[j]
+            if max < cor2.loc[f1,f2]:
+                max = cor2.loc[f1,f2]
+                idx1 = f1
+                idx2 = f2
+    if max < threshold:
+        break
+    X_selected = X_selected.drop(idx2)
+
+print(X[X_selected].corr().abs())
+data = X[X_selected]
+labels = y["label"]
+tsne = TSNE(n_components=2, random_state=0)
+transformed_data = tsne.fit_transform(data)
+plt.figure()
+scatter = plt.scatter(transformed_data[:, 0],transformed_data[:, 1],c=labels,cmap='Spectral',s=5)
+plt.colorbar(boundaries=np.arange(3)-0.5).set_ticks(np.arange(2))
+plt.title('t-SNE visualization')
+plt.xlabel('t-SNE axis 1')
+plt.ylabel('t-SNE axis 2')
+plt.show()
